@@ -1,6 +1,6 @@
 package patterns;
 
-public class Epic extends HelpHandler implements ITopic {
+public class Epic extends HelpHandler implements ITopic, Cloneable {
 
 	private String name;
 
@@ -56,9 +56,20 @@ public class Epic extends HelpHandler implements ITopic {
 	}
 	
 	public Epic getClone() throws CloneNotSupportedException {
-		return (Epic) this.clone();
+		return (Epic) super.clone();
 	}
 
+	@Override
+	public Epic clone() {
+		Epic clone = null;
+		try {
+			clone = this.getClone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		return clone;
+	}
+	
 	@Override
 	public ITopic setAttribute(String attribute, Object value) {
 		// TODO Auto-generated method stub

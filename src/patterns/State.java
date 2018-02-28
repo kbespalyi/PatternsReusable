@@ -6,7 +6,6 @@ public abstract class State {
 	
     public void pull(Chain wrapper) {
         wrapper.setState(new Chain.Off());
-        System.out.println("   turning off");
     }
     
     public Chain.Statuses getState() {

@@ -1,10 +1,15 @@
 package tests;
 
 import static org.junit.Assert.assertEquals;
-
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.function.Function;
@@ -15,6 +20,7 @@ import javax.swing.SwingUtilities;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import utils.Generic;
 import utils.ProxySocketMachine;
@@ -23,9 +29,19 @@ import utils.DateUtils;
 import patterns.*;
 import patterns.HelpHandler.Topic;
 
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.MockitoJUnitRunner;
+
+/*@RunWith(MockitoJUnitRunner.class)*/
+@SuppressWarnings("unused")
 public class Patterns {
 
 	int numberOfMessagesToAccept = 10;
+	static ServerSocket mockServerSocket;
+	static Socket mockTestClientSocket;
 
 	// Flyweight Pattern - Structural patterns
 	@Test
@@ -666,6 +682,93 @@ public class Patterns {
 		System.out.println();
 	}
 
+	// Test Facade Design Pattern - Structural patterns
+	@Test
+	public void testFacadePattern_thenEquals() {
+		Job job1 = new Job(new TaskProperties() {
+			{
+				user = "Jon";
+				project = "Project 1";
+				priority = 1;
+				completed = false;
+			}
+		}, new SprintProperties() {
+			{
+				name = "Sprint 1";
+				priority = 1;
+				completed = false;
+			}
+		}, "Epic1");
+
+		assertEquals(job1.hasJob(), true);
+		
+		assertEquals(job1.getTask().getName(), "Project 1: Jon - 1");
+		assertEquals(job1.getEpic().getName(), "Epic1");
+		assertEquals(job1.getPosition().toString(), "OFF");
+
+		assertEquals(job1.hasJob(), true);
+		
+		job1.start();		
+		assertEquals(job1.getPosition().toString(), "LOW");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "MEDIUM");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "HIGH");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "OFF");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "LOW");
+	}
+
+	// Test Proxy Design Pattern - Structural patterns
+	@Test
+	public void testProxyDesignPattern_thenEquals() {
+		IJob job1 = new ProxyJob(new TaskProperties() {
+			{
+				user = "Jon";
+				project = "Project 1";
+				priority = 1;
+				completed = false;
+			}
+		}, new SprintProperties() {
+			{
+				name = "Sprint 1";
+				priority = 1;
+				completed = false;
+			}
+		}, "Epic1");
+		
+		assertEquals(job1.hasJob(), false);
+		
+		assertEquals(job1.getTask().getName(), "Project 1: Jon - 1");
+		assertEquals(job1.getEpic().getName(), "Epic1");
+		assertEquals(job1.getPosition().toString(), "OFF");
+
+		assertEquals(job1.hasJob(), true);
+		
+		job1.start();		
+		assertEquals(job1.getPosition().toString(), "LOW");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "MEDIUM");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "HIGH");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "OFF");
+
+		job1.up();		
+		assertEquals(job1.getPosition().toString(), "LOW");
+		
+	}
+
+	/*
+
 	// Test Object Pool Design Pattern - Creational patterns
 	@Test
 	public void testObjectPoolPattern_thenEquals() {
@@ -685,26 +788,17 @@ public class Patterns {
 	// Test Proxy Design Pattern - Structural patterns
 	@Test
 	public void testProxyDesignPattern_thenEquals() {
+		// Server
 		Thread thread1 = new Thread(new Runnable() {
 
-			ProxySocketMachine first = new ProxySocketMachine(true);
+			ProxySocketMachine first = new ProxySocketMachine(mockServerSocket);
 
 			public void run() {
 				this.first.start();
 			}
 		});
 
-		Thread thread2 = new Thread(new Runnable() {
-
-			ProxySocketMachine second = new ProxySocketMachine(false);
-
-			public void run() {
-				this.second.start();
-			}
-		});
-
 		thread1.start();
-		thread2.start();
 	}
 
 	// Test Private Class Data Design Pattern - Structural patterns
@@ -723,10 +817,32 @@ public class Patterns {
 		
 		System.out.println("Exit");
 	}
+	*/
 
 	@BeforeClass
 	public static void setup() {
+		/*
+	    mockServerSocket = mock(ServerSocket.class);
+	    mockTestClientSocket = mock(Socket.class);
 
+	    try {
+	        when(mockServerSocket.accept()).thenReturn(mockTestClientSocket);
+	    } catch (IOException e) {
+	        fail(e.getMessage());
+	    }
+
+	    try {
+	        PipedOutputStream oStream = new PipedOutputStream();
+	        when(mockTestClientSocket.getOutputStream()).thenReturn(oStream);
+
+	        PipedInputStream iStream = new PipedInputStream(oStream);
+	        when(mockTestClientSocket.getInputStream()).thenReturn(iStream);
+
+	        when(mockTestClientSocket.isClosed()).thenReturn(false);
+	    } catch (IOException e) {
+	        fail(e.getMessage());
+	    }
+	    */
 	}
 
 	@AfterClass

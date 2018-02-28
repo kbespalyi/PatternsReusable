@@ -90,7 +90,7 @@ public class Task extends HelpHandler implements ITopic, Cloneable {
 	}
 
 	public Sprint getSprint() {
-		return sprint;
+		return sprint != null ? sprint.clone () : null;
 	}
 
 	public void setSprint(Sprint sprint) {
@@ -190,7 +190,6 @@ public class Task extends HelpHandler implements ITopic, Cloneable {
 		try {
 			clone = this.getClone();
 		} catch (CloneNotSupportedException e) {
-			e.printStackTrace();
 		}
 		return clone;
 	}

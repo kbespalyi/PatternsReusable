@@ -12,18 +12,36 @@ public class SocketProxy implements SocketInterface {
 	// 1. Create a "wrapper" for a remote,
     // or expensive, or sensitive target
     private Socket socket;
+    private ServerSocket serverSocket;
     private BufferedReader in;
     private PrintWriter out;
 
     public SocketProxy(String host, int port, boolean wait) {
         try {
+            // 2. Encapsulate the complexity/overhead of the target in the wrapper
             if (wait) {
-                // 2. Encapsulate the complexity/overhead of the target in the wrapper
-                socket = new ServerSocket(port).accept();
+            	// Server
+        		socket = new ServerSocket(port).accept();
             } else {
-                socket = new Socket(host, port);
+            	// Client
+        		socket = new Socket(host, port);
             }
             in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public SocketProxy(int port, final ServerSocket mockServer) {
+        try {
+
+        	// Server
+    		serverSocket = mockServer;
+        	// Client
+    		socket = mockServer.accept();
+
+    		in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
         } catch(IOException e) {
             e.printStackTrace();
@@ -48,6 +66,9 @@ public class SocketProxy implements SocketInterface {
     public void dispose() {
         try {
             socket.close();
+            if (serverSocket != null) {
+            	serverSocket.close();
+            }
         } catch(IOException e) {
             e.printStackTrace();
         }

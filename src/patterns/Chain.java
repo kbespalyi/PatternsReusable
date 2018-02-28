@@ -25,7 +25,11 @@ public class Chain {
     }
     
     public void print() {
-        System.out.println("   " + getState().toString() + " speed");
+    	if (current.getState().toString() == "OFF") {
+            System.out.println("   turning off");
+    	} else {
+            System.out.println("   " + getState().toString() + " level");
+    	}
     }
     
     public static class Off extends State {
@@ -35,7 +39,6 @@ public class Chain {
     	@Override
         public void pull(Chain wrapper) {
             wrapper.setState(new Low());
-            wrapper.print();
         }
     	
     	@Override
@@ -52,7 +55,6 @@ public class Chain {
     	@Override
         public void pull(Chain wrapper) {
             wrapper.setState(new Medium());
-            wrapper.print();
         }
 
     	@Override
@@ -68,7 +70,6 @@ public class Chain {
     	@Override
         public void pull(Chain wrapper) {
             wrapper.setState(new High());
-            wrapper.print();
         }
 
     	@Override
