@@ -30,6 +30,6 @@ public class ObservableTask extends Task {
 
 	public void removeObserver(ObserverEvent observer) {
 		this.observers.removeAt(this.observers.indexOf(observer, 0));
-	};
+	}
 
 }

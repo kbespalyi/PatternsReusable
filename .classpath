@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="lib" path="lib/joda-convert-1.8.1.jar"/>
 	<classpathentry kind="lib" path="lib/joda-time-2.9.2.jar"/>
 	<classpathentry kind="lib" path="lib/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/json.jar"/>
 	<classpathentry kind="lib" path="lib/hsqldb-2.4.0.jar"/>
 	<classpathentry kind="lib" path="lib/sqltool-2.4.0.jar"/>
-	<classpathentry kind="lib" path="/Users/khuseinbespalyi/Documents/JavaProjects/PatternsReusable/lib/mockito-core-2.7.12.jar" sourcepath="/Users/khuseinbespalyi/.m2/repository/org/mockito/mockito-core/2.7.12/mockito-core-2.7.12-sources.jar"/>
+	<classpathentry kind="lib" path="lib/mockito-core-2.7.12.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

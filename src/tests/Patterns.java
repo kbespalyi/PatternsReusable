@@ -1,8 +1,20 @@
 package tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -11,16 +23,12 @@ import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.function.Function;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import utils.Generic;
 import utils.ProxySocketMachine;
@@ -29,20 +37,14 @@ import utils.DateUtils;
 import patterns.*;
 import patterns.HelpHandler.Topic;
 
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import org.mockito.junit.MockitoJUnitRunner;
-
 /*@RunWith(MockitoJUnitRunner.class)*/
 @SuppressWarnings("unused")
-public class Patterns {
+public final class Patterns {
 
 	int numberOfMessagesToAccept = 10;
 	static ServerSocket mockServerSocket;
 	static Socket mockTestClientSocket;
-
+	
 	// Flyweight Pattern - Structural patterns
 	@Test
 	public void testFlyweightPattern_thenEquals() {
@@ -152,6 +154,7 @@ public class Patterns {
 		assertEquals("Project 1", task1.getProject());
 		assertEquals(1, task1.getPriority());
 		assertEquals(false, task1.isCompleted());
+		assertEquals(false, task1.isSaved());
 
 		final Services.IService notifSrv = new Services.NotificationService();
 		final Services.IService logSrv = new Services.LoggingService();
@@ -171,7 +174,14 @@ public class Patterns {
 			}
 		});
 
-		Mediator.subscribe("complete", auditSrv, new Services.ObserverEvent() {
+		Mediator.subscribe("save", logSrv, new Services.ObserverEvent() {
+			@Override
+			public void invoke(Task context) {
+				logSrv.update(context);
+			}
+		});
+
+		Mediator.subscribe("save", auditSrv, new Services.ObserverEvent() {
 			@Override
 			public void invoke(Task context) {
 				auditSrv.update(context);
@@ -179,11 +189,23 @@ public class Patterns {
 		});
 
 		task1.complete();
+		task1.save();
 
 		Mediator.unsubscribe("complete", logSrv);
+		Mediator.unsubscribe("save", logSrv);
 
 		task1.complete();
+		task1.save();
 
+		assertEquals("Create a demo for constructors", task1.getName());
+		assertEquals("Jon", task1.getUser());
+		assertEquals("Project 1", task1.getProject());
+		assertEquals(1, task1.getPriority());
+		assertEquals(true, task1.isCompleted());
+		assertEquals(true, task1.isSaved());
+		assertEquals(2, task1.getLogByMessage(notifSrv.getMessage()));
+		assertEquals(3, task1.getLogByMessage(logSrv.getMessage()));
+		assertEquals(2, task1.getLogByMessage(auditSrv.getMessage()));
 	}
 
 	// Command Pattern - Behavioral patterns
@@ -494,42 +516,45 @@ public class Patterns {
 	// Test Strategy Pattern - Behavioral patterns
 	@Test
 	public void testStrategyPattern_thenEquals() {
-		Strategy[] algorithms = { new StrategyStacks.StrategySolution() {
-			private int state = 1;
-
-			protected void start() {
-				System.out.print("Start  ");
+		Strategy[] algorithms = {
+			new StrategyStacks.StrategySolution() {
+				private int state = 1;
+	
+				protected void start() {
+					System.out.print("Start  ");
+				}
+	
+				protected void stop() {
+					System.out.println("Stop");
+				}
+	
+				protected boolean nextTry() {
+					System.out.print("NextTry-" + (state++) + "  ");
+					return true;
+				}
+	
+				protected boolean isSolution() {
+					System.out.print("IsSolution-" + (state == 3) + "  ");
+					return (state == 3);
+				}
+			},
+			new StrategyStacks.StrategySearch() {
+				private int state = 1;
+	
+				protected void preProcess() {
+					System.out.print("PreProcess  ");
+				}
+	
+				protected void postProcess() {
+					System.out.print("PostProcess  ");
+				}
+	
+				protected boolean search() {
+					System.out.print("Search-" + (state++) + "  ");
+					return state == 3 ? true : false;
+				}
 			}
-
-			protected void stop() {
-				System.out.println("Stop");
-			}
-
-			protected boolean nextTry() {
-				System.out.print("NextTry-" + state++ + "  ");
-				return true;
-			}
-
-			protected boolean isSolution() {
-				System.out.print("IsSolution-" + (state == 3) + "  ");
-				return (state == 3);
-			}
-		}, new StrategyStacks.StrategySearch() {
-			private int state = 1;
-
-			protected void preProcess() {
-				System.out.print("PreProcess  ");
-			}
-
-			protected void postProcess() {
-				System.out.print("PostProcess  ");
-			}
-
-			protected boolean search() {
-				System.out.print("Search-" + state++ + "  ");
-				return state == 3 ? true : false;
-			}
-		} };
+		};
 
 		for (Strategy algorithm : algorithms) {
 			StrategyStacks.execute(algorithm);
@@ -724,7 +749,18 @@ public class Patterns {
 		assertEquals(job1.getPosition().toString(), "LOW");
 	}
 
-	// Test Proxy Design Pattern - Structural patterns
+	/** Test Proxy Design Pattern - Structural patterns
+	 * Proxy Design Pattern comes into picture here as it defers the Object Creation process of memory-intensive components thereby speeding up the Application.
+	 * 
+	 * There are different types of proxy patterns. Virtual Proxy is one of them. Others (from GOF) are Protection Proxy, Remote Proxy, Smart Reference.
+	 * From GOF:
+	 * A remote proxy provides a local representative for an object in a different address space.
+	 * 	- Virtual Proxy is an object with the same interface as the real object.
+	 * 	- The first time one of its methods are called it loads the real object and then delegates.
+	 * A virtual proxy creates expensive objects on demand.
+	 * A protection proxy controls access to the original object. Protection proxies are useful when objects should have different access rights.
+	 * A smart reference is a replacement for a bare pointer that performs additional actions when an object is accessed
+	 */
 	@Test
 	public void testProxyDesignPattern_thenEquals() {
 		IJob job1 = new ProxyJob(new TaskProperties() {
@@ -767,10 +803,17 @@ public class Patterns {
 		
 	}
 
-	/*
-
+	/**
+	 * Gateway/Mapper/Registry Pattern Design
+	 */
+	@Test
+	public void testGatewayMapperRegistryDesignPatterns() {
+		
+	}
+	
 	// Test Object Pool Design Pattern - Creational patterns
 	@Test
+	@Disabled("for demonstration purposes")
 	public void testObjectPoolPattern_thenEquals() {
 		// Create the ConnectionPool:
 		ObjectPool.JDBCConnectionPool pool = new ObjectPool.JDBCConnectionPool("org.hsqldb.jdbcDriver",
@@ -787,7 +830,8 @@ public class Patterns {
 
 	// Test Proxy Design Pattern - Structural patterns
 	@Test
-	public void testProxyDesignPattern_thenEquals() {
+	@Disabled("for demonstration purposes")
+	public void testProxyDesignPattern_mockServerSocket() {
 		// Server
 		Thread thread1 = new Thread(new Runnable() {
 
@@ -803,6 +847,8 @@ public class Patterns {
 
 	// Test Private Class Data Design Pattern - Structural patterns
 	@Test
+	@Disabled("for demonstration purposes")
+	@DisplayName("testPrivateClassDataDesignPattern_thenEquals - 😱")
 	public void testPrivateClassDataDesignPattern_thenEquals() {
 		final JFrame frame = PrivateClassData.buildFrame();
 
@@ -817,8 +863,274 @@ public class Patterns {
 		
 		System.out.println("Exit");
 	}
-	*/
 
+	// Test Methods
+	@Test
+	public void testClassMethods() {
+		// 1.
+		class TestMethods {
+
+		    /** Test Binary Search
+		     * @param nums ordered sequence of integers
+		     * @param key  an element for searching
+		     * @return index of key or a negative value
+		     */
+		    public int callBinarySearch(int[] nums, int key) {
+		        int len = nums.length;
+		        int idx = -1;
+		        while (++idx < len) {
+		            if (nums[idx] == key) {
+		                break;
+		            }
+		        }
+		        if (idx >= len) {
+		        	idx = -1;
+		        }
+		        return idx;
+		    }
+
+		    /** Test Binary Revert
+		     * @param nums ordered sequence of integers
+		     * @return reversed array
+		     */
+		    public int[] callRevereArray(int[] nums) {
+		        int len = nums.length;
+		        int half = len / 2;
+		        int idx = -1;
+		        while (++idx < half) {
+		            int c = nums[idx];
+		            nums[idx] = nums[len - idx - 1];
+		            nums[len - idx - 1] = c;
+		        }
+		        return nums;
+		    }
+
+		    /** Find the smallest positive integer
+		     * Given an array A of N integers, returns the smallest positive integer (greater than 0) that does not occur in A.
+			 * For example, given A = [1, 3, 6, 4, 1, 2], the function should return 5.
+	     	 * Given A = [1, 2, 3], the function should return 4.
+		     * Given A = [−1, −3], the function should return 1.
+		     * Write an efficient algorithm for the following assumptions:
+		     * N is an integer within the range [1..100,000];
+		     * each element of array A is an integer within the range [−1,000,000..1,000,000].
+		     */
+		    public int callSmallPositiveInt(int[] A) {
+		        int test = 1;
+		        int len = A.length;
+		        Arrays.sort(A);
+		        for ( int idx = 0; idx < len; idx++ ) {
+		            if (A[idx] >= test) {
+		            	if (A[idx] == test) {
+			                test++;
+			                continue;
+			            } else {
+			                break;
+			            }
+		            } 
+		        }
+		        return test;
+		    }
+		    
+		    /** BinaryGap
+		     * A binary gap within a positive integer N is any maximal sequence of consecutive zeros that is surrounded
+		     * by ones at both ends in the binary representation of N. For example, number 9 has binary representation 1001
+		     * and contains a binary gap of length 2. The number 529 has binary representation 1000010001
+		     * and contains two binary gaps: one of length 4 and one of length 3. The number 20 has binary
+		     * representation 10100 and contains one binary gap of length 1. The number 15 has binary representation 1111
+		     * and has no binary gaps. The number 32 has binary representation 100000 and has no binary gaps.
+		     * that, given a positive integer N, returns the length of its longest binary gap.
+		     * The function should return 0 if N doesn't contain a binary gap. For example, given N = 1041
+		     * the function should return 5, because N has binary representation 10000010001 and so its longest
+		     * binary gap is of length 5. Given N = 32 the function should return 0, because N has binary representation '100000'
+		     * and thus no binary gaps.
+		     * Write an efficient algorithm for the following assumptions: N is an integer within the range [1..2,147,483,647].
+		     */
+		    public int callBinaryGapLength(int N) {
+		    	int result = 0;
+		    	
+		    	if (N < 1 || N > 2147483647) {
+		    		return result;
+		    	}
+		    	
+		    	int currentGap = 0;
+		    	int currentGapLen = 0;
+		    	char prev = ' ';
+
+		    	String binary = Integer.toBinaryString(N);
+		    	int index = binary.length();
+		    	while (index-- > 0) {
+		    		char ch = binary.charAt(index);
+		    		if (ch == '0') {
+		    			if (prev == '1') {
+		    				currentGap++;
+		    			}
+		    			currentGapLen++;
+		    		} else {
+		    			if (currentGap > 0) {
+		    				result = Math.max(currentGapLen, result);
+		    			}
+	    				currentGapLen = 0;
+		    		}
+		    		prev = ch;
+		    	}
+
+		    	return currentGap > 0 ? Math.max(currentGapLen, result) : 0;
+		    }
+		    
+		    private int getMin(int arr[], int n) {
+	    	    int min = arr[0];
+	    	    for (int i = 1; i < n; i++)
+	    	        if (arr[i] < min) min = arr[i];
+	    	    return min;
+	    	}
+		    
+		    /** Consecutive: Check if array elements are consecutive
+		     * Given an unsorted array of numbers, write a function that returns true if the array consists of consecutive numbers.
+		     * Examples: 
+		     * 	a) If the array is {5, 2, 3, 1, 4}, then the function should return true because the array has consecutive numbers from 1 to 5.
+		     * 	b) If the array is {83, 78, 80, 81, 79, 82}, then the function should return true because the array has consecutive numbers from 78 to 83.
+		     * 	c) If the array is {34, 23, 52, 12, 3}, then the function should return false because the elements are not consecutive.
+		     * 	d) If the array is {7, 6, 5, 5, 3, 4}, then the function should return false because 5 and 5 are not consecutive.
+		     */
+		    public boolean callIsConsecutive(int[] arr) {
+		    	boolean result = false;
+		    	
+		    	if (arr.length == 0) {
+		    		return result;
+		    	}
+		    	
+		    	int n = arr.length;
+		    	
+	    	    int min_ele = getMin(arr, n);
+	    	    int num = 0;
+
+	    	    for (int i=0; i < n; i++) {
+	    	        num ^= min_ele^arr[i];
+	    	        min_ele += 1;
+	    	    }
+
+	    	    if (num == 0) result = true; 
+		    	
+		    	return result;
+		    }
+		    
+		    /** Contiguous: Check if array contains contiguous integers with duplicates allowed
+		     * Given an array of n integers(duplicates allowed).
+		     * 
+		     * Input : arr[] = {5, 2, 3, 6, 4, 4, 6, 6}
+		     * Output : Yes
+		     * The elements form a contiguous set of integers which is {2, 3, 4, 5, 6}.
+		     * 
+		     * Input : arr[] = {10, 14, 10, 12, 12, 13, 15}
+		     * Output : No
+		     */
+		    public boolean callCheckContiguous(int arr[]) {
+		    	if (arr.length == 0) {
+		    		return false;
+		    	}
+		    	
+		    	int n = arr.length;
+
+		    	// Find maximum and
+		        // minimum elements.
+		        int max = Integer.MIN_VALUE;
+		        int min = Integer.MAX_VALUE;
+		         
+		        for (int i = 0; i < n; i++) {
+		            max = Math.max(max, arr[i]);
+		            min = Math.min(min, arr[i]);
+		        }
+		      
+		        int m = max - min + 1;
+		      
+		        // There should be at least m elements in array to make them contiguous.
+		        if (m > n) return false;
+
+		    	boolean result = true;
+		        
+		        // Create a visited array and initialize false.
+		        boolean  visited[] = new boolean[n];
+		      
+		        // Mark elements as true.
+		        for (int i = 0; i < n; i++)   
+		           visited[arr[i] - min] = true;
+		      
+		        // If any element is not marked, all elements are not contiguous.
+		        for (int i = 0; i < m; i++)
+		           if (visited[i] == false) result = false;		    	
+		    	
+		    	return result;
+		    }
+		}
+		
+		// 2. Test functions
+		TestMethods testMethods = new TestMethods();
+		int[] array = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+		int[] emptyArray = new int[] {};
+		int[] negativeArray = new int[] {-1, -300, -5};
+		int[] randomArray = new int[] {-300, -5, 10, 0, 11, 9, 3, 4, 8, 1, 7, 3, 2};
+
+		// callBinarySearch
+		assertEquals(testMethods.callBinarySearch(array, 5), 5);
+		assertEquals(testMethods.callBinarySearch(array, 0), 0);
+		assertEquals(testMethods.callBinarySearch(array, 9), 9);
+		
+		// callReverseArray
+		int[] reverse = testMethods.callRevereArray(array);
+		assertEquals(reverse.length, 10);
+		assertEquals(reverse[0], 9);
+		assertEquals(reverse[9], 0);
+		assertEquals(reverse[1], 8);
+		assertEquals(reverse[8], 1);
+		assertEquals(reverse[2], 7);
+		assertEquals(reverse[7], 2);
+		assertEquals(reverse[3], 6);
+		assertEquals(reverse[6], 3);
+		assertEquals(reverse[4], 5);
+		assertEquals(reverse[5], 4);
+
+		assertEquals(testMethods.callBinarySearch(array, 10), -1);
+		assertEquals(testMethods.callBinarySearch(emptyArray, 5), -1);
+		
+		// callSmallPositiveInt
+		assertEquals(testMethods.callSmallPositiveInt(array), 10);
+		assertEquals(testMethods.callSmallPositiveInt(emptyArray), 1);
+		assertEquals(testMethods.callSmallPositiveInt(negativeArray), 1);
+		assertEquals(testMethods.callSmallPositiveInt(randomArray), 5);
+		assertEquals(testMethods.callSmallPositiveInt(new int[] {1, 3, 6, 4, 1, 2}), 5);
+		
+		// callBinaryGapLength
+		assertEquals(testMethods.callBinaryGapLength(0), 0); // 0000b
+		assertEquals(testMethods.callBinaryGapLength(1), 0); // 0001b
+		assertEquals(testMethods.callBinaryGapLength(5), 1); // 0101b
+		assertEquals(testMethods.callBinaryGapLength(9), 2); // 1001b
+		assertEquals(testMethods.callBinaryGapLength(529), 4); // 1000010001b
+		assertEquals(testMethods.callBinaryGapLength(20), 1); // 10100b
+		assertEquals(testMethods.callBinaryGapLength(15), 0); // 1111b
+		assertEquals(testMethods.callBinaryGapLength(32), 0); // 100000b
+		assertEquals(testMethods.callBinaryGapLength(1041), 5); // 10000010001b
+		assertEquals(testMethods.callBinaryGapLength(1074270464), 10); // 1000000000010000001000100000000b
+		assertEquals(testMethods.callBinaryGapLength(334121417), 2); // 10011111010100100100111001001b
+		assertEquals(testMethods.callBinaryGapLength(334121417), 2); // 10011111010100100100111001001b
+		assertEquals(testMethods.callBinaryGapLength(300564937), 5); // 10001111010100100000111001001b
+		assertEquals(testMethods.callBinaryGapLength(2147483647), 0); // 11111111111111111111111111111111b
+		assertEquals(testMethods.callBinaryGapLength(-529), 0);
+
+		// callIsConsecutive
+		assertEquals(testMethods.callIsConsecutive(emptyArray), false);
+		assertEquals(testMethods.callIsConsecutive(array), true);
+		assertEquals(testMethods.callIsConsecutive(negativeArray), false);
+		assertEquals(testMethods.callIsConsecutive(randomArray), false);
+		assertEquals(testMethods.callIsConsecutive(new int[] {1, 3, 6, 4, 1, 2}), false);
+		assertEquals(testMethods.callIsConsecutive(new int[] {5, 2, 3, 1, 4}), true);
+		assertEquals(testMethods.callIsConsecutive(new int[] {83, 78, 80, 81, 79, 82}), true);
+		assertEquals(testMethods.callIsConsecutive(new int[] {34, 23, 52, 12, 3}), false);
+		assertEquals(testMethods.callIsConsecutive(new int[] {7, 6, 5, 5, 3, 4}), false);
+		
+		assertEquals(testMethods.callCheckContiguous(new int[] {5, 2, 3, 6, 4, 4, 6, 6}), true);
+		assertEquals(testMethods.callCheckContiguous(new int[] {10, 14, 10, 12, 12, 13, 15}), false);
+	}
+	
 	@BeforeClass
 	public static void setup() {
 		/*
@@ -844,7 +1156,7 @@ public class Patterns {
 	    }
 	    */
 	}
-
+	
 	@AfterClass
 	public static void tearDown() {
 

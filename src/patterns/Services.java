@@ -7,35 +7,52 @@ public final class Services {
 	}
 	
 	public static abstract class IService {
+		protected String message = "";
 		public ObserverEvent observer = null;
+
+		public String getMessage() {
+			return message;
+		}
 
 		public abstract void update(Task task);
 	}
 	
 	public static class NotificationService extends IService {
-		final private String message = "Nothing ";
+
+		public NotificationService() {
+			message = "Notifications";
+		}
 
 		@Override
 		public void update(Task task) {
-			System.out.println(message + task.getUser() + " for task " + task.getName());
+			task.update(message);
+			//System.out.println(message + ": " + task.getUser() + " for task " + task.getName());
 		}
 	}
 
 	public static class LoggingService extends IService {
-		final private String message = "Logging ";
+
+		public LoggingService() {
+			message = "Loggings";
+		}
 
 		@Override
 		public void update(Task task) {
-			System.out.println(message + task.getUser() + " for task " + task.getName());
+			task.update(message);
+			//System.out.println(message + ": " + task.getUser() + " for task " + task.getName());
 		}
 	}
 
 	public static class AuditingService extends IService {
-		final private String message = "Auditiong ";
+
+		public AuditingService() {
+			message = "Auditings";
+		}
 
 		@Override
 		public void update(Task task) {
-			System.out.println(message + task.getUser() + " for task " + task.getName());
+			task.update(message);
+			//System.out.println(message + ": " + task.getUser() + " for task " + task.getName());
 		}
 	}
 }

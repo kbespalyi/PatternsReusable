@@ -1,10 +1,10 @@
 package tests;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import utils.DateUtils;
 
@@ -28,9 +28,10 @@ public class DateConvertTest {
 		String registrationDate = "2016-02-04T19:07:07.886-0500";
 		String expectedRegistrationDate = "2016-02-05T00:07:07.886Z";
 		
-		assertEquals("unexpetected 'registration_date' value",
+		assertEquals(
 			expectedRegistrationDate,
-			dateUtils.convertToUTC(registrationDate)
+			dateUtils.convertToUTC(registrationDate),
+			"unexpetected 'registration_date' value"
 		);
 
 	}
@@ -41,9 +42,10 @@ public class DateConvertTest {
 		String registrationDate = "2016-02-04T19:07:07.886-0500";
 		String expectedRegistrationDate = "2016-02-05T00:07";
 		
-		assertEquals("unexpetected 'registration_date' value",
+		assertEquals(
 			expectedRegistrationDate,
-			dateUtils.getDateTimeWithoutSeconds(dateUtils.convertToUTC(registrationDate))
+			dateUtils.getDateTimeWithoutSeconds(dateUtils.convertToUTC(registrationDate)),
+			"unexpetected 'registration_date' value"
 		);
 
 	}
@@ -54,9 +56,10 @@ public class DateConvertTest {
 		String registrationDate = "2016-02-05T00:07:07.886Z";
 		String expectedRegistrationDate = "2016-02-05T00:07";
 		
-		assertEquals("unexpetected 'registration_date' value",
+		assertEquals(
 			expectedRegistrationDate,
-			dateUtils.getDateTimeWithoutSeconds(registrationDate)
+			dateUtils.getDateTimeWithoutSeconds(registrationDate),
+			"unexpetected 'registration_date' value"
 		);
 
 	}

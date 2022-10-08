@@ -27,3 +27,7 @@ TAGS
 ./bin
 
 cache.properties
+
+.DS_Store
+
+bin/

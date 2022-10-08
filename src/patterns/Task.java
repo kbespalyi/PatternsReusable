@@ -1,5 +1,7 @@
 package patterns;
 
+import java.util.HashMap;
+
 public class Task extends HelpHandler implements ITopic, Cloneable {
 	private int id = 0;
 	private String name = "";
@@ -9,6 +11,8 @@ public class Task extends HelpHandler implements ITopic, Cloneable {
 	private Sprint sprint = null;
 	private boolean completed = false;
 	private boolean saved = false;
+
+	private HashMap<String, Integer> invokes = new HashMap<String, Integer>();
 	
 	public Task(String name, TaskProperties properties) {
 		this.name = name;
@@ -113,6 +117,23 @@ public class Task extends HelpHandler implements ITopic, Cloneable {
 	public void save() {
 		this.saved = true;
 		System.out.println("saving task: " + name);
+	}
+	
+	public void update(String message) {
+		System.out.println(message);
+		if (invokes.containsKey(message)) {
+			invokes.put(message, invokes.get(message).intValue() + 1);
+		} else {
+			invokes.put(message, 1);
+		}
+	}
+
+	public int getLogByMessage(String message) {
+		int result = 0;
+		if (invokes.containsKey(message)) {
+			result = invokes.get(message).intValue();
+		}
+		return result;
 	}
 
 	@Override

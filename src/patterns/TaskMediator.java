@@ -8,8 +8,14 @@ public class TaskMediator extends Task {
 
 	@Override
 	public void complete() {
-		Mediator.publish("complete", this);
 		super.complete();
+		Mediator.publish("complete", this);
+	}
+
+	@Override
+	public void save() {
+		super.save();
+		Mediator.publish("save", this);
 	}
 
 }
